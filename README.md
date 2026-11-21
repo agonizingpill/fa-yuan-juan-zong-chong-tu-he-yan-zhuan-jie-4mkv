@@ -7,10 +7,10 @@
 ## 六项业务职责
 
 - 来访授权：化名、模拟事实和版本、授权依据；新卷默认未授权。修改事实使旧主题复核失效。撤回授权立即终止待受理或已受理转介，释放承接位，保留服务历史。
-- 双方冲突：来访方与相对方关联到归一化当事人（NFKC、空格和大小写归一）；候选机构已有在途对立方时阻止转介；发信与签收均重新核验。
+- 双方冲突：来访方与相对方关联到归一化当事人（NFKC、空格和大小写归一）；候选机构已有在途对立方时阻止转介；冲突页展示双方归一键、机构当前承接的对立方名册、命中卷宗与最终核验依据。核验存根记录当事人版本（`party_version`）与核验依据快照，补录相对方或撤回旧转介后旧存根实时标记失效并附按最新事实的复算结论，迟到旧核验不能放行；发信与签收均重新核验。
 - 主题专长：真实 Redis worker 运行 TF-IDF + MultinomialNB，劳动/住房/消费三主题；低于68%明确退回人工，所有结果均需主管复核才可转介。
 - 材料补正：按复核主题给出两项必需清单，提交脱敏文件索引后由主管通过或退回。补正重新提交会清除旧通过状态。
-- 机构承接：机构专长和并发承接位约束；发信占位，撤回和销案释放；同卷只保留一条在途转介，机构受理回执需主管登记。
+- 机构承接：机构专长和并发承接位约束；发信占位，撤回和销案释放；同卷只保留一条在途转介，由服务层锁内判断与 `referrals.active_intake` 可空唯一列双重保证（在途=卷宗id，退出在途=NULL，MySQL/SQLite/PG 唯一索引均允许多个 NULL），重试发信不重复占位；机构受理回执需主管登记。
 - 工时销案：已受理才可登记1–480分钟服务片段，累计工时大于零后主管回访销案。销案卷宗只读，保留回访满意度和总时长。
 
 ## 运行
@@ -53,7 +53,7 @@ JWT有效8小时。演示账户、密码和数据仅用于本地行政流程试�
 
 | 路径 | 职责 |
 |---|---|
-| backend/src/models.py、schemas.py | Intake/Consent、Party/CaseParty/ConflictCheck、Triage、Requirement/Document、Agency/Referral、ServiceLog/Closure关系约束及输入契约 |
+| backend/src/models.py、schemas.py | Intake/Consent（含 `party_version`）、Party/CaseParty/ConflictCheck（含版本与 `basis` 依据快照）、Triage、Requirement/Document、Agency/Referral（含 `active_intake` 在途唯一列）、ServiceLog/Closure关系约束及输入契约 |
 | intake_service.py、conflict_service.py | 授权撤回、事实版本、双方归一与机构对照 |
 | triage_service.py、algorithm.py、worker.py | 行政主题排队、实算和主管复核 |
 | document_service.py、referral_service.py、closure_service.py | 材料补正、容量事务、机构回执和工时销案 |

@@ -16,4 +16,4 @@ def close(db,data,user):
     minutes=db.scalar(select(func.coalesce(func.sum(ServiceLog.minutes),0)).where(ServiceLog.referral_id==ref.id))
     reject(minutes<=0,'没有实际服务工时，不能销案')
     row=Closure(intake_id=case.id,referral_id=ref.id,satisfaction=data.satisfaction,followup=data.followup,total_minutes=minutes)
-    db.add(row);ref.status='completed';case.status='closed';agency.active_count-=1;db.flush();return finish(db,user,'回访销案并释放容量',row)
+    db.add(row);ref.status='completed';ref.active_intake=None;case.status='closed';agency.active_count-=1;db.flush();return finish(db,user,'回访销案并释放容量',row)

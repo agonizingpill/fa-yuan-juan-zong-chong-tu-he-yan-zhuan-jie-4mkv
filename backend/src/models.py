@@ -17,6 +17,7 @@ class Intake(Base):
     alias:Mapped[str]=mapped_column(String(60))
     facts:Mapped[str]=mapped_column(Text)
     facts_version:Mapped[int]=mapped_column(Integer,default=1)
+    party_version:Mapped[int]=mapped_column(Integer,default=1)
     status:Mapped[str]=mapped_column(String(20),default=IntakeState.open.value)
 class Consent(Base):
     __tablename__='consents'
@@ -44,6 +45,8 @@ class ConflictCheck(Base):
     agency_id:Mapped[int]=mapped_column(ForeignKey('agencies.id'))
     blocked:Mapped[bool]=mapped_column(Boolean)
     reason:Mapped[str]=mapped_column(String(200))
+    party_version:Mapped[int]=mapped_column(Integer,default=1)
+    basis:Mapped[dict]=mapped_column(JSON,default=dict)
     at:Mapped[datetime]=mapped_column(DateTime(timezone=True),default=now)
 class Triage(Base):
     __tablename__='triages'
@@ -85,11 +88,15 @@ class Agency(Base):
     active_count:Mapped[int]=mapped_column(Integer,default=0)
 class Referral(Base):
     __tablename__='referrals'
+    # 可空唯一列做“同卷仅一条在途”的数据库级兜底：在途=卷宗id，撤回/销案置 NULL。
+    # MySQL/InnoDB、SQLite、PostgreSQL 的唯一索引均允许多个 NULL，历史行可共存。
+    __table_args__=(UniqueConstraint('active_intake',name='ux_referral_active_intake'),)
     id:Mapped[int]=mapped_column(primary_key=True)
     intake_id:Mapped[int]=mapped_column(ForeignKey('intakes.id'))
     agency_id:Mapped[int]=mapped_column(ForeignKey('agencies.id'))
     topic:Mapped[str]=mapped_column(String(20))
     status:Mapped[str]=mapped_column(String(20),default=ReferralState.pending.value)
+    active_intake:Mapped[int|None]=mapped_column(Integer,nullable=True)
     receipt:Mapped[str]=mapped_column(String(120),default='')
     note:Mapped[str]=mapped_column(String(200),default='')
     at:Mapped[datetime]=mapped_column(DateTime(timezone=True),default=now)

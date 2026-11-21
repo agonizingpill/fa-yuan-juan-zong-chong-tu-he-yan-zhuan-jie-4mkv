@@ -15,7 +15,10 @@ def login(data:Login,db=Depends(session)):
     return {'token':issue(row),'username':row.username,'role':row.role}
 @router.get('/workspace')
 def workspace(db=Depends(session),user=Depends(current)):
-    return {m.__tablename__:[dump(v) for v in db.scalars(select(m).order_by(m.id))] for m in [Intake,Consent,Party,CaseParty,ConflictCheck,Triage,Requirement,Document,Agency,Referral,ServiceLog,Closure]}
+    payload={m.__tablename__:[dump(v) for v in db.scalars(select(m).order_by(m.id))] for m in [Intake,Consent,Party,CaseParty,Triage,Requirement,Document,Agency,Referral,ServiceLog,Closure]}
+    payload['conflict_checks']=[conflict.decorate_check(db,v) for v in db.scalars(select(ConflictCheck).order_by(ConflictCheck.id))]
+    payload['agency_roster']=conflict.agency_roster(db)
+    return payload
 @router.post('/intakes')
 def create(data:IntakeInput,db=Depends(session),user=Depends(editor)):return intake.create(db,data,user)
 @router.patch('/intakes/{id}/facts')

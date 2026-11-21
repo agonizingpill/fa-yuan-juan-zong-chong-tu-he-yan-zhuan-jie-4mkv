@@ -12,7 +12,7 @@ def consent(db,id,data,user):
     reject(case.status=='closed','销案卷宗只读')
     ref=active_referral(db,id)
     if not data.authorized and ref is not None:
-        agency=get(db,Agency,ref.agency_id,True);agency.active_count-=1;ref.status='withdrawn';ref.note='来访人撤回授权，自动退回';case.status='open'
+        agency=get(db,Agency,ref.agency_id,True);agency.active_count-=1;ref.status='withdrawn';ref.active_intake=None;ref.note='来访人撤回授权，自动退回';case.status='open'
     row.authorized=data.authorized;row.basis=data.basis;row.at=now();return finish(db,user,'授权更新',row)
 def authorized(db,id):
     row=db.scalar(select(Consent).where(Consent.intake_id==id))

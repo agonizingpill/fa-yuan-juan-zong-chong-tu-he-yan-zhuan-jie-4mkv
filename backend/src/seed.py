@@ -28,7 +28,7 @@ def seed():
             triage=Triage(intake_id=case.id,facts_version=1,status='done' if code=='LZ033' else 'reviewed',predicted=label,confidence=confidence,approved=None if code=='LZ033' else 'labor' if code in ('LZ030','LZ031') else 'housing',manual_required=confidence<.68,review_note='接待主管核对主题' if code!='LZ033' else '',metrics=metrics);db.add(triage)
             if code=='LZ030':
                 agency=db.scalar(select(Agency).where(Agency.code=='YN'));agency.active_count+=1
-                db.add(Referral(intake_id=case.id,agency_id=agency.id,topic='labor',status='accepted',receipt='YN-ACK-030',note='模拟相对方关联承接，用于冲突核验'))
+                db.add(Referral(intake_id=case.id,agency_id=agency.id,topic='labor',status='accepted',active_intake=case.id,receipt='YN-ACK-030',note='模拟相对方关联承接，用于冲突核验'))
                 for req in db.scalars(select(Requirement).where(Requirement.topic=='labor')):db.add(Document(intake_id=case.id,requirement_id=req.id,reference='LZ030-脱敏档案.pdf',status='verified',note='已核验'))
             elif code=='LZ031':
                 req=db.scalar(select(Requirement).where(Requirement.topic=='labor',Requirement.code=='identity'));db.add(Document(intake_id=case.id,requirement_id=req.id,reference='LZ031-脱敏身份.pdf',status='verified',note='缺工资材料，待补正'))
